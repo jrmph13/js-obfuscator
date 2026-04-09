@@ -45,6 +45,10 @@ def _split_prefix(source: str) -> tuple[str, bool, bool, str]:
 
 
 def _resolve_terser() -> list[str] | None:
+    local_bin = pathlib.Path("node_modules") / ".bin" / "terser"
+    if local_bin.exists():
+        return [str(local_bin)]
+
     for candidate in ("npx.cmd", "npx", "terser.cmd", "terser"):
         resolved = shutil.which(candidate)
         if not resolved:
@@ -58,7 +62,10 @@ def _resolve_terser() -> list[str] | None:
 def _run_terser(source: str, *, mangle: bool, is_module: bool) -> str:
     base = _resolve_terser()
     if base is None:
-        raise RuntimeError("Unable to find `npx` or `terser` in PATH.")
+        raise RuntimeError(
+            "Unable to find `terser`. Install Node.js and terser, for example: "
+            "`pkg install nodejs && npm install -g terser`."
+        )
 
     command = [
         *base,
@@ -151,7 +158,11 @@ def _build_parser() -> argparse.ArgumentParser:
         description=(
             "Apply production-safe JavaScript transforms. "
             "Anti-analysis layers are intentionally not implemented."
-        )
+        ),
+        epilog=(
+            "Termux usage: run `python jrm.py input.js -o output.js` or make the file "
+            "executable and use `./jrm.py input.js -o output.js`."
+        ),
     )
     parser.add_argument("input", help="Input JavaScript file")
     parser.add_argument("-o", "--output", required=True, help="Output JavaScript file")
